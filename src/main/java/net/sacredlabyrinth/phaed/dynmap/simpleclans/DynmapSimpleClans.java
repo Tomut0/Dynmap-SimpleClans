@@ -56,7 +56,8 @@ public class DynmapSimpleClans extends JavaPlugin {
 		// saving images
 		saveDefaultImages();
 
-		// set up layers
+        // set up layers
+        new ClanHomesLayer("layer.homes", markerApi);
 
 		clanHomes = new ClanHomes();
 		toggles = new Toggles();
