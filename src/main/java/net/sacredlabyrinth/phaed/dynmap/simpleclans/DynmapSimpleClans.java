@@ -142,4 +142,22 @@ public class DynmapSimpleClans extends JavaPlugin {
                 String.format("Missing language for %s key", messageKey) :
                 ChatColor.translateAlternateColorCodes('&', msg);
     }
+
+    /**
+     * Sends a message to the console
+     *
+     * @param message             message to send
+     * @param respectUserDecision should the message be sent if debug is false?
+     */
+    public static void debug(String message, boolean respectUserDecision) {
+        if (respectUserDecision && !instance.getConfig().getBoolean("debug", false)) {
+            return;
+        }
+
+        instance.getLogger().info(message);
+    }
+
+    public static void debug(String message) {
+        debug(message, true);
+    }
 }

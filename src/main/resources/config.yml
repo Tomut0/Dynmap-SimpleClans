@@ -1,4 +1,5 @@
 # Dynmap-SimpleClans configuration
+debug: false
 language:
   no-permission: "&cYou don't have permission!"
   reloading: "&bReloading plugin..."
