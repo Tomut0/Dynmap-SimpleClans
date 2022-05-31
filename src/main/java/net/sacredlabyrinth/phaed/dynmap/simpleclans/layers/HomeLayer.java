@@ -9,6 +9,7 @@ import net.sacredlabyrinth.phaed.simpleclans.ClanPlayer;
 import net.sacredlabyrinth.phaed.simpleclans.utils.VanishUtils;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.dynmap.markers.Marker;
 import org.dynmap.markers.MarkerAPI;
 import org.dynmap.markers.MarkerIcon;
 import org.jetbrains.annotations.NotNull;
@@ -25,7 +26,7 @@ public class HomeLayer extends Layer {
         super(iconStorage, config, markerAPI);
     }
 
-    public void createMarker(Clan clan) {
+    public void upsertMarker(Clan clan) {
         if (markerSet == null) {
             return;
         }
@@ -42,15 +43,20 @@ public class HomeLayer extends Layer {
             return;
         }
 
-        markerSet.createMarker(tag, formatClanLabel(clan),
-                true, world.getName(), loc.getX(), loc.getY(), loc.getZ(),
-                icon, false);
+        Marker marker = markerSet.findMarker(tag);
+        if (marker == null) {
+            markerSet.createMarker(tag, formatClanLabel(clan),
+                    true, world.getName(), loc.getX(), loc.getY(), loc.getZ(),
+                    icon, false);
+        } else {
+            marker.setLocation(world.getName(), loc.getX(), loc.getY(), loc.getZ());
+        }
     }
 
     @Override
     protected void initMarkers() {
         for (Clan clan : getClansWithHome()) {
-            createMarker(clan);
+            upsertMarker(clan);
         }
     }
 
