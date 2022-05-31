@@ -1,7 +1,11 @@
 package net.sacredlabyrinth.phaed.dynmap.simpleclans;
 
 import net.sacredlabyrinth.phaed.dynmap.simpleclans.entries.KillEntry;
+import net.sacredlabyrinth.phaed.dynmap.simpleclans.layers.HomeLayer;
+import net.sacredlabyrinth.phaed.simpleclans.Clan;
 import net.sacredlabyrinth.phaed.simpleclans.ClanPlayer;
+import net.sacredlabyrinth.phaed.simpleclans.events.PlayerHomeSetEvent;
+import org.bukkit.Location;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -11,6 +15,11 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.dynmap.markers.Marker;
+import org.dynmap.markers.MarkerSet;
+
+import java.util.Objects;
+import java.util.Optional;
 
 public class DynmapSimpleClansListener implements Listener {
 
@@ -23,6 +32,29 @@ public class DynmapSimpleClansListener implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         plugin.getPlayerManager().addEntry(event.getPlayer());
+    }
+
+    @EventHandler
+    public void onSetHome(PlayerHomeSetEvent event) {
+        HomeLayer homeLayer = plugin.getHomeLayer();
+        Optional<MarkerSet> markerSet = homeLayer.getMarkerSet();
+
+        Clan clan = event.getClan();
+        String tag = clan.getTag();
+
+        Location loc = event.getLocation();
+        String worldName = Objects.requireNonNull(loc.getWorld()).getName();
+
+        if (markerSet.isPresent()) {
+            MarkerSet markers = markerSet.get();
+            Marker marker = markers.findMarker(tag);
+
+            if (marker != null) {
+                marker.setLocation(worldName, loc.getX(), loc.getY(), loc.getZ());
+            } else {
+                homeLayer.createMarker(clan);
+            }
+        }
     }
 
     @EventHandler(priority = EventPriority.LOW)

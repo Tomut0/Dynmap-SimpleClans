@@ -29,7 +29,6 @@ toggles:
 layer:
   homes:
     enable: true
-    update-seconds: 300             # How often the markers are updated
     default-icon: "clanhome"        # Set the icon used if the clan doesn't set one, DON'T type the file extension
     label: "Clan Homes"             # The label for the layer
     format: "{clan} &8(home)"       # Variables: {clan}, {tag}, {member_count}, (more placeholders: https://github.com/RoinujNosde/Dynmap-SimpleClans/wiki/Placeholders), Colors: &1, New line is pipe symbol: |
