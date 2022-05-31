@@ -6,15 +6,18 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.dynmap.markers.MarkerIcon;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Set;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static net.sacredlabyrinth.phaed.dynmap.simpleclans.DynmapSimpleClans.lang;
 
-public final class CommandManager implements CommandExecutor {
+public final class CommandManager implements CommandExecutor, TabExecutor {
 
     private final @NotNull DynmapSimpleClans plugin;
 
@@ -40,9 +43,6 @@ public final class CommandManager implements CommandExecutor {
                 if (cmd.equalsIgnoreCase("seticon") && args.length == 2) {
                     return setIcon(player, args[1]);
                 }
-                if (cmd.equalsIgnoreCase("listicons")) {
-                    return listIcons(player);
-                }
             }
         }
         return false;
@@ -54,30 +54,6 @@ public final class CommandManager implements CommandExecutor {
     private void help(@NotNull CommandSender sender) {
         plugin.getConfig().getStringList("help-command").forEach(s ->
                 sender.sendMessage(ChatColor.translateAlternateColorCodes('&', s)));
-    }
-
-    /**
-     * Retrieves the list of available icons
-     */
-    private boolean listIcons(@NotNull Player player) {
-        if (!player.hasPermission("simpleclans.map.list")) {
-            player.sendMessage(lang("no-permission"));
-            return true;
-        }
-
-        player.sendMessage(lang("available-icons"));
-
-        Set<MarkerIcon> icons = plugin.getHomeLayer().getIconStorage().getIcons();
-        for (MarkerIcon icon : icons) {
-            String message = lang("icon-line").replace("{iconName}", icon.getMarkerIconLabel());
-            player.sendMessage(message);
-        }
-
-        if (icons.isEmpty()) {
-            player.sendMessage(lang("error-no-icons"));
-        }
-
-        return true;
     }
 
     /**
@@ -122,5 +98,28 @@ public final class CommandManager implements CommandExecutor {
         }
 
         return true;
+    }
+
+    @Override
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
+        if (!command.getName().equalsIgnoreCase("seticon") || args.length != 0) {
+            return Collections.emptyList();
+        }
+
+        if (!sender.hasPermission("simpleclans.map.list")) {
+            sender.sendMessage(lang("no-permission"));
+            return Collections.emptyList();
+        }
+
+        List<String> icons = plugin.getHomeLayer().getIconStorage().getIcons().stream().
+                map(MarkerIcon::getMarkerIconLabel).
+                collect(Collectors.toList());
+
+        if (icons.isEmpty()) {
+            sender.sendMessage(lang("error-no-icons"));
+            return Collections.emptyList();
+        }
+
+        return icons;
     }
 }

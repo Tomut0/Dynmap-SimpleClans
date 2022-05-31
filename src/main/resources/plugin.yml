@@ -16,7 +16,7 @@ permissions:
   simpleclans.map.reload:
     description: Can reload the plugin
   simpleclans.map.list:
-    description: Can list the icons
+    description: Can retrieve the list of icons
   simpleclans.map.icon.bypass:
     description: Can use all icons
   simpleclans.map.seticon:

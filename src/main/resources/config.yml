@@ -6,8 +6,6 @@ language:
   not-member: "&cYou must be member of a clan"
   icon-changed: "&bThe icon was set successfully! The change will take effect soon..."
   icon-not-found: "&cIcon not found"
-  available-icons: "&bAvailable icons:"
-  icon-line: "&b* @icon"
   error-no-icons: "&c* Error, no icons available!" 
   not-visible: "&bYou are no longer visible on the map"
   visible: "&bYou are now visible on the map"
