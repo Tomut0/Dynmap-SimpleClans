@@ -1,19 +1,17 @@
 package net.sacredlabyrinth.phaed.dynmap.simpleclans.layers;
 
-import net.sacredlabyrinth.phaed.dynmap.simpleclans.DynmapSimpleClans;
 import net.sacredlabyrinth.phaed.dynmap.simpleclans.IconStorage;
 import org.dynmap.markers.MarkerAPI;
 import org.dynmap.markers.MarkerSet;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.Optional;
+import static net.sacredlabyrinth.phaed.dynmap.simpleclans.layers.LayerConfig.LayerField.*;
 
 public abstract class Layer {
 
-    protected @Nullable MarkerSet markerSet;
-    protected @NotNull final IconStorage iconStorage;
-    protected @NotNull final LayerConfig config;
+    protected final @NotNull IconStorage iconStorage;
+    protected final @NotNull LayerConfig config;
+    protected MarkerSet markerSet;
     protected @NotNull MarkerAPI markerAPI;
 
     public Layer(@NotNull IconStorage iconStorage, @NotNull LayerConfig config, @NotNull MarkerAPI markerAPI) {
@@ -25,32 +23,23 @@ public abstract class Layer {
         initMarkers();
     }
 
-    public Optional<MarkerSet> getMarkerSet() {
-        return Optional.ofNullable(markerSet);
-    }
-
     public @NotNull IconStorage getIconStorage() {
         return iconStorage;
     }
 
     private void initMarkerSet() {
-        if (!config.getBoolean(LayerConfig.LayerField.ENABLE)) {
+        if (!config.getBoolean(ENABLE)) {
             return;
         }
 
         markerSet = markerAPI.getMarkerSet(getId());
-        markerSet = (markerSet == null) ?
-                markerAPI.createMarkerSet(getId(), getLabel(), null, false) : null;
-
         if (markerSet == null) {
-            DynmapSimpleClans.getInstance().getLogger().
-                    severe(String.format("Failed to create market set with %s id", getId()));
-            return;
+            markerSet = markerAPI.createMarkerSet(getId(), getLabel(), null, false);
         }
 
-        markerSet.setLayerPriority(config.getInt(LayerConfig.LayerField.PRIORITY));
-        markerSet.setHideByDefault(config.getBoolean(LayerConfig.LayerField.HIDDEN));
-        markerSet.setMinZoom(config.getInt(LayerConfig.LayerField.MINZOOM));
+        markerSet.setLayerPriority(config.getInt(PRIORITY));
+        markerSet.setHideByDefault(config.getBoolean(HIDDEN));
+        markerSet.setMinZoom(config.getInt(MINZOOM));
     }
 
     protected abstract void initMarkers();
@@ -60,6 +49,6 @@ public abstract class Layer {
 
     @NotNull
     protected String getLabel() {
-        return config.getString(LayerConfig.LayerField.LABEL);
+        return config.getString(LABEL);
     }
 }
