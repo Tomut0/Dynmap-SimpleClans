@@ -29,6 +29,9 @@ public class LayerConfig {
     }
 
 
+    /**
+     * Represents the enum of <b>general</b> {@link Layer}'s fields
+     */
     public enum LayerField {
 
         ENABLE("enable", true),
