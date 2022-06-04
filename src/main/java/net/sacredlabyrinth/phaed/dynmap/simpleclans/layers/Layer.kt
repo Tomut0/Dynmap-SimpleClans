@@ -7,7 +7,6 @@ import org.dynmap.markers.MarkerSet
 
 abstract class Layer(
     private val id: String,
-    private val label: String,
     val iconStorage: IconStorage,
     protected val config: LayerConfig,
     markerAPI: MarkerAPI
@@ -16,9 +15,9 @@ abstract class Layer(
     protected var markerSet: MarkerSet
 
     init {
-        check(config.getBoolean(ENABLE)) { "[$id] Layer $label is disabled!" }
+        check(config.getBoolean(ENABLE)) { "Layer $id is disabled!" }
 
-        markerSet = markerAPI.getMarkerSet(id) ?: markerAPI.createMarkerSet(id, label, null, true)
+        markerSet = markerAPI.getMarkerSet(id) ?: markerAPI.createMarkerSet(id, config.getString(LABEL), null, true)
 
         markerSet.layerPriority = config.getInt(PRIORITY)
         markerSet.hideByDefault = config.getBoolean(HIDDEN)
