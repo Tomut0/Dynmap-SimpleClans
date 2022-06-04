@@ -4,17 +4,18 @@ import net.sacredlabyrinth.phaed.dynmap.simpleclans.DynmapSimpleClans
 import net.sacredlabyrinth.phaed.dynmap.simpleclans.DynmapSimpleClans.lang
 import net.sacredlabyrinth.phaed.dynmap.simpleclans.Helper
 import net.sacredlabyrinth.phaed.dynmap.simpleclans.IconStorage
+import net.sacredlabyrinth.phaed.dynmap.simpleclans.layers.LayerConfig.LayerField.LABEL
 import net.sacredlabyrinth.phaed.simpleclans.Clan
 import net.sacredlabyrinth.phaed.simpleclans.utils.VanishUtils
 import org.dynmap.markers.MarkerAPI
 
-class HomeLayer(
-    iconStorage: IconStorage,
-    config: LayerConfig,
-    markerAPI: MarkerAPI
-) : Layer(iconStorage, config, markerAPI) {
+class HomeLayer(iconStorage: IconStorage, config: LayerConfig, markerAPI: MarkerAPI) :
+    Layer("simpleclans.clan.homes", config.getString(LABEL), iconStorage, config, markerAPI) {
+
     init {
-        initMarkers()
+        for (clan in getClansWithHome()) {
+            upsertMarker(clan)
+        }
     }
 
     fun upsertMarker(clan: Clan) {
@@ -23,9 +24,7 @@ class HomeLayer(
         val loc = clan.homeLocation
         val world = loc?.world ?: return
 
-        if (isHidden(tag, world.name)) {
-            return
-        }
+        check(isHidden(tag, world.name)) {"Marker can't be updated/created, because it's hidden!"}
 
         val marker = markerSet.findMarker(tag)
         marker?.setLocation(world.name, loc.x, loc.y, loc.z) ?: markerSet.createMarker(
@@ -71,18 +70,10 @@ class HomeLayer(
         return Helper.colorToHTML(label)
     }
 
-    private fun initMarkers() {
-        for (clan in getClansWithHome()) {
-            upsertMarker(clan)
-        }
-    }
-
     private fun getClansWithHome(): List<Clan> {
         return DynmapSimpleClans.getInstance().clanManager.clans
             .filter { clan -> clan.homeLocation != null }
             .filter { clan -> clan.homeLocation!!.world != null }
             .toList()
     }
-
-    override fun getId() = "simpleclans.clan.homes"
 }
