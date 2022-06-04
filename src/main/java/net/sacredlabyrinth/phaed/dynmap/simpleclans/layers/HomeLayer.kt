@@ -1,12 +1,11 @@
 package net.sacredlabyrinth.phaed.dynmap.simpleclans.layers
 
 import net.sacredlabyrinth.phaed.dynmap.simpleclans.DynmapSimpleClans
+import net.sacredlabyrinth.phaed.dynmap.simpleclans.DynmapSimpleClans.lang
 import net.sacredlabyrinth.phaed.dynmap.simpleclans.Helper
 import net.sacredlabyrinth.phaed.dynmap.simpleclans.IconStorage
 import net.sacredlabyrinth.phaed.simpleclans.Clan
-import net.sacredlabyrinth.phaed.simpleclans.ClanPlayer
 import net.sacredlabyrinth.phaed.simpleclans.utils.VanishUtils
-import org.bukkit.entity.Player
 import org.dynmap.markers.MarkerAPI
 
 class HomeLayer(
@@ -14,6 +13,9 @@ class HomeLayer(
     config: LayerConfig,
     markerAPI: MarkerAPI
 ) : Layer(iconStorage, config, markerAPI) {
+    init {
+        initMarkers()
+    }
 
     fun upsertMarker(clan: Clan) {
         val tag = clan.tag
@@ -37,19 +39,15 @@ class HomeLayer(
     }
 
     private fun formatClanLabel(clan: Clan): String? {
-        val inactive = clan.inactiveDays.toString() + "/" + clan.maxInactiveDays
+        val inactive = "${clan.inactiveDays}/${clan.maxInactiveDays}"
 
         var onlineMembers =
-            clan.onlineMembers.stream().map { cp: ClanPlayer -> cp.toPlayer() }.filter { player: Player? ->
-                VanishUtils.isVanished(player)
-            }.count().toString()
+            clan.onlineMembers.map { cp -> cp.toPlayer() }.count { player -> VanishUtils.isVanished(player) }.toString()
 
-        onlineMembers = onlineMembers + "/" + clan.size
+        onlineMembers = "${onlineMembers}/${clan.size}"
 
-        val status =
-            if (clan.isVerified) DynmapSimpleClans.lang("verified") else DynmapSimpleClans.lang("unverified")
-        val feeEnabled =
-            if (clan.isMemberFeeEnabled) DynmapSimpleClans.lang("fee-enabled") else DynmapSimpleClans.lang("fee-disabled")
+        val status = if (clan.isVerified) lang("verified") else lang("unverified")
+        val feeEnabled = if (clan.isMemberFeeEnabled) lang("fee-enabled") else lang("fee-disabled")
 
         val label = config.section.getString("format", "{clan} &8(home)")!!
             .replace("{clan}", clan.name)
@@ -71,6 +69,19 @@ class HomeLayer(
             .replace("{fee_enabled}", feeEnabled)
 
         return Helper.colorToHTML(label)
+    }
+
+    private fun initMarkers() {
+        for (clan in getClansWithHome()) {
+            upsertMarker(clan)
+        }
+    }
+
+    private fun getClansWithHome(): List<Clan> {
+        return DynmapSimpleClans.getInstance().clanManager.clans
+            .filter { clan -> clan.homeLocation != null }
+            .filter { clan -> clan.homeLocation!!.world != null }
+            .toList()
     }
 
     override fun getId() = "simpleclans.clan.homes"
