@@ -17,12 +17,12 @@ public class DynmapSimpleClansListener implements Listener {
         this.plugin = plugin;
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onSetHome(PlayerHomeSetEvent event) {
         plugin.getHomeLayer().upsertMarker(event.getClan());
     }
 
-    @EventHandler(priority = EventPriority.LOW)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onKill(AddKillEvent event) {
         plugin.getKillsLayer().createMarker(new Kill(event.getAttacker(), event.getVictim(), LocalDateTime.now()));
     }
