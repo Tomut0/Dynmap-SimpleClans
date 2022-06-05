@@ -11,21 +11,24 @@ class KillsLayer(iconStorage: IconStorage, config: LayerConfig, markerAPI: Marke
     Layer("simpleclans.layers.kill", iconStorage, config, markerAPI) {
 
     fun createMarker(kill: Kill) {
+        val vclan = kill.victim.clan
         val victim = kill.victim.toPlayer() ?: return
         val loc = victim.location
         val worldName = loc.world?.name
 
+        if (vclan == null && !config.section.getBoolean("show.clan-players", true) ||
+            vclan != null && !config.section.getBoolean("show.civilians", true)) {
+            return
+        }
+
         val marker = markerSet.createMarker(
             kill.time.toString(), formatLabel(kill), true,
             worldName, loc.x, loc.y, loc.z,
-            iconStorage.getIcon(null), false
+            iconStorage.getIcon("blood"), false
         )
 
         object : BukkitRunnable() {
-            override fun run() {
-                marker.deleteMarker()
-                this.cancel()
-            }
+            override fun run() = marker.deleteMarker()
         }.runTaskLater(DynmapSimpleClans.getInstance(), config.section.getInt("visible-seconds", 60) * 20L)
     }
 

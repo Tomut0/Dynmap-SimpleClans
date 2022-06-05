@@ -12,7 +12,7 @@ abstract class Layer(
     markerAPI: MarkerAPI
 ) {
 
-    protected var markerSet: MarkerSet
+    protected val markerSet: MarkerSet
 
     init {
         check(config.getBoolean(ENABLE)) { "Layer $id is disabled!" }

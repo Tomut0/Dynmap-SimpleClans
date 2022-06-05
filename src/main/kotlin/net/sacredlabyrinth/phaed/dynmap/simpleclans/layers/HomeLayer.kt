@@ -1,9 +1,11 @@
 package net.sacredlabyrinth.phaed.dynmap.simpleclans.layers
 
 import net.sacredlabyrinth.phaed.dynmap.simpleclans.DynmapSimpleClans
+import net.sacredlabyrinth.phaed.dynmap.simpleclans.DynmapSimpleClans.debug
 import net.sacredlabyrinth.phaed.dynmap.simpleclans.DynmapSimpleClans.lang
 import net.sacredlabyrinth.phaed.dynmap.simpleclans.Helper
 import net.sacredlabyrinth.phaed.dynmap.simpleclans.IconStorage
+import net.sacredlabyrinth.phaed.dynmap.simpleclans.Preferences
 import net.sacredlabyrinth.phaed.simpleclans.Clan
 import net.sacredlabyrinth.phaed.simpleclans.utils.VanishUtils
 import org.dynmap.markers.MarkerAPI
@@ -21,13 +23,24 @@ class HomeLayer(iconStorage: IconStorage, config: LayerConfig, markerAPI: Marker
         val tag = clan.tag
         val loc = clan.homeLocation
         val world = loc?.world ?: return
+        val worldName = world.name
 
-        check(isHidden(tag, world.name)) { "Marker can't be updated/created, because it's hidden!" }
+        val preferences = Preferences(clan)
+        val icon = iconStorage.getIcon(preferences.clanHomeIcon)
+        val label = formatClanLabel(clan)
 
-        val marker = markerSet.findMarker(tag)
-        marker?.setLocation(world.name, loc.x, loc.y, loc.z) ?: markerSet.createMarker(
-            tag, formatClanLabel(clan), true, world.name, loc.x, loc.y, loc.z, iconStorage.getIcon(tag), true
+        if (isHidden(tag, worldName)) {
+            debug("Marker can't be updated/created, because it's hidden!")
+            return
+        }
+
+        val marker = markerSet.findMarker(tag) ?: markerSet.createMarker(
+            tag, label, true, worldName, loc.x, loc.y, loc.z, icon, true
         )
+
+        marker.setLocation(worldName, loc.x, loc.y, loc.z)
+        marker.setLabel(label, true)
+        marker.markerIcon = icon
     }
 
     private fun isHidden(tag: String, worldName: String): Boolean {
