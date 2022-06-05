@@ -1,82 +1,49 @@
 package net.sacredlabyrinth.phaed.dynmap.simpleclans;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import org.dynmap.markers.MarkerAPI;
 import org.dynmap.markers.MarkerIcon;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.activation.MimetypesFileTypeMap;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Paths;
 import java.util.*;
 
 public class IconStorage {
-    private final @NotNull MarkerAPI markerAPI;
+    private final @NotNull MarkerAPI markerApi;
     private final @NotNull Set<MarkerIcon> iconSet;
-    private final @NotNull MarkerIcon defaultIcon;
+    private final @NotNull JavaPlugin plugin;
+    private @NotNull MarkerIcon defaultIcon;
 
     /**
      * Creates an unmodified storage for {@link MarkerIcon}.
      *
-     * @param workingPath The path of working directory, where icons stored.
-     * @param defaultIcon The icon, located inside working directory.
-     *                    Used if working directory doesn't contain any icons.
-     * @param markerAPI   {@link MarkerAPI}
-     * @throws IOException if workingPath is invalid.
+     * @param plugin          The plugin instance
+     * @param workingPath     The path of working directory, where icons stored.
+     * @param defaultIconName The icon name, located inside working directory.
+     *                        Used if working directory doesn't contain any icons.
+     * @param markerAPI       {@link MarkerAPI}
+     * @throws IllegalArgumentException if workingPath is invalid.
      */
-    public IconStorage(@NotNull String workingPath, @NotNull String defaultIcon, @NotNull MarkerAPI markerAPI) throws IOException {
+    public IconStorage(@NotNull JavaPlugin plugin, @NotNull String workingPath,
+                       @NotNull String defaultIconName, @NotNull MarkerAPI markerAPI) throws IllegalArgumentException {
+        this.plugin = plugin;
         if (!isValidPath(workingPath)) {
-            throw new IOException(String.format("Provided workingPath ( %s ) is invalid!", workingPath));
+            throw new IllegalArgumentException(String.format("Provided workingPath ( %s ) is invalid!", workingPath));
         }
-
-        File workingDir = new File(workingPath);
-        this.iconSet = getIconsIn(workingDir);
-        this.defaultIcon = markerAPI.createMarkerIcon(defaultIcon, defaultIcon,
-                DynmapSimpleClans.class.getResourceAsStream(workingPath + File.separator + defaultIcon));
-        this.markerAPI = markerAPI;
-    }
-
-    /**
-     * @return {@link MarkerIcon} from the working directory or the default one
-     */
-    public @NotNull MarkerIcon getIcon(@NotNull String iconName) {
-        Optional<MarkerIcon> iconOptional = iconSet.stream().
-                filter(markerIcon -> Objects.equals(markerIcon.getMarkerIconLabel(), iconName)).
-                findAny();
-
-        return iconOptional.orElse(defaultIcon);
-    }
-
-    /**
-     * Retrieves all {@link MarkerIcon} in defined folder
-     */
-    private @NotNull Set<MarkerIcon> getIconsIn(@NotNull File iconsFolder) {
-        File[] files = iconsFolder.listFiles(pathname -> {
-            String mimeType = new MimetypesFileTypeMap().getContentType(pathname);
-            return mimeType.split("/")[0].equals("image");
-        });
-
-        if (files == null) {
-            return new HashSet<>();
+        markerApi = markerAPI;
+        defaultIcon = markerAPI.getMarkerIcon(defaultIconName);
+        if (defaultIcon == null) {
+            defaultIcon = markerAPI.createMarkerIcon(defaultIconName, defaultIconName,
+                    plugin.getClass().getResourceAsStream(workingPath + "/" + defaultIconName + ".png"));
         }
-
-        HashSet<MarkerIcon> icons = new HashSet<>();
-        for (File icon : files) {
-            String name = icon.getName();
-            String nameWithoutExt = name.substring(0, name.lastIndexOf("."));
-            try (FileInputStream stream = new FileInputStream(icon)) {
-                MarkerIcon markerIcon = markerAPI.createMarkerIcon(nameWithoutExt, nameWithoutExt, stream);
-                if (markerIcon != null) {
-                    icons.add(markerIcon);
-                }
-            } catch (IOException ex) {
-                DynmapSimpleClans.getInstance().getLogger().severe(
-                        String.format("Error occurred while trying to create %s icon: %s", name, ex.getMessage()));
-            }
-        }
-
-        return Collections.unmodifiableSet(icons);
+        File workingDir = new File(plugin.getDataFolder(), workingPath);
+        iconSet = getIconsIn(workingDir);
     }
 
     /**
@@ -84,7 +51,7 @@ public class IconStorage {
      * Null safe.
      *
      * <pre>
-     * Calling examples:
+     * Examples:
      *    isValidPath("c:/test");      // returns true
      *    isValidPath("c:/te:t");      // returns false
      *    isValidPath("c:/te?t");      // returns false
@@ -97,9 +64,72 @@ public class IconStorage {
     private static boolean isValidPath(String path) {
         try {
             Paths.get(path);
-        } catch (NullPointerException ex) {
+        } catch (InvalidPathException ex) {
             return false;
         }
         return true;
+    }
+
+    /**
+     * @return {@link MarkerIcon} from the working directory or the default one
+     */
+    public @NotNull MarkerIcon getIcon(@Nullable String iconName) {
+        Optional<MarkerIcon> icon = iconSet.stream().
+                filter(markerIcon -> Objects.equals(markerIcon.getMarkerIconLabel(), iconName)).
+                findAny();
+
+        return icon.orElse(defaultIcon);
+    }
+
+    /**
+     * Checks if the icon is contained in IconStorage
+     *
+     * @param iconName the name of icon
+     * @return true if contains, otherwise false
+     */
+    public boolean has(@NotNull String iconName) {
+        return iconSet.stream().map(MarkerIcon::getMarkerIconLabel).anyMatch(iconName::equals);
+    }
+
+    /**
+     * @return Retrieves all icons from IconStorage
+     */
+    public Set<MarkerIcon> getIcons() {
+        return iconSet;
+    }
+
+    /**
+     * Retrieves all {@link MarkerIcon} in defined folder
+     *
+     * <p>
+     * Uses {@link File#listFiles(FileFilter)} method to retrieve
+     * all .png images from the folder.
+     * </p>
+     */
+    private @NotNull Set<MarkerIcon> getIconsIn(@NotNull File iconsFolder) {
+        File[] files = iconsFolder.listFiles(file -> file.getName().contains(".png"));
+
+        if (files == null) {
+            return new HashSet<>();
+        }
+
+        HashSet<MarkerIcon> icons = new HashSet<>();
+        for (File icon : files) {
+            String name = icon.getName();
+            String nameWithoutExt = name.substring(0, name.lastIndexOf("."));
+            try (FileInputStream stream = new FileInputStream(icon)) {
+                MarkerIcon markerIcon = markerApi.createMarkerIcon(nameWithoutExt, nameWithoutExt, stream);
+                if (markerIcon == null) {
+                    icons.add(markerApi.getMarkerIcon(nameWithoutExt));
+                } else {
+                    icons.add(markerIcon);
+                }
+            } catch (IOException ex) {
+                plugin.getLogger().severe(
+                        String.format("Error occurred while trying to create %s icon: %s", name, ex.getMessage()));
+            }
+        }
+
+        return Collections.unmodifiableSet(icons);
     }
 }
