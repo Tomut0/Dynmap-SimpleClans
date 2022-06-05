@@ -115,12 +115,4 @@ public final class Helper {
             }
         }
     }
-
-    /**
-     * @param loc the location
-     * @return the prettier coordinates
-     */
-    public static String toLocationString(@NotNull Location loc) {
-        return loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + " " + loc.getWorld().getName();
-    }
 }
