@@ -1,12 +1,10 @@
-package net.sacredlabyrinth.phaed.dynmap.simpleclans.managers;
+package net.sacredlabyrinth.phaed.dynmap.simpleclans;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import net.sacredlabyrinth.phaed.dynmap.simpleclans.DynmapSimpleClans;
 import net.sacredlabyrinth.phaed.simpleclans.Clan;
-import org.dynmap.markers.MarkerIcon;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -93,23 +91,5 @@ public class Preferences {
         }
 
         savePreferences();
-    }
-
-    public static class ClanPreferences {
-        private final Clan clan;
-        private final MarkerIcon homeIcon;
-
-        public ClanPreferences(@NotNull Clan clan, @NotNull MarkerIcon homeIcon) {
-            this.clan = clan;
-            this.homeIcon = homeIcon;
-        }
-
-        public Clan getClan() {
-            return clan;
-        }
-
-        public MarkerIcon getHomeIcon() {
-            return homeIcon;
-        }
     }
 }
