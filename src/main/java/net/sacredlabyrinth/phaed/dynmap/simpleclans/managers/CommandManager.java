@@ -1,28 +1,35 @@
 package net.sacredlabyrinth.phaed.dynmap.simpleclans.managers;
 
 import net.sacredlabyrinth.phaed.dynmap.simpleclans.DynmapSimpleClans;
+import net.sacredlabyrinth.phaed.dynmap.simpleclans.Preferences;
+import net.sacredlabyrinth.phaed.dynmap.simpleclans.layers.HomeLayer;
+import net.sacredlabyrinth.phaed.simpleclans.Clan;
 import net.sacredlabyrinth.phaed.simpleclans.ClanPlayer;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.dynmap.markers.MarkerIcon;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static net.sacredlabyrinth.phaed.dynmap.simpleclans.DynmapSimpleClans.lang;
 
-public final class CommandManager implements CommandExecutor, TabExecutor {
+public final class CommandManager implements TabExecutor {
 
     private final @NotNull DynmapSimpleClans plugin;
+    private final @Nullable HomeLayer homeLayer;
 
     public CommandManager(@NotNull DynmapSimpleClans plugin) {
         this.plugin = plugin;
+        homeLayer = plugin.getHomeLayer();
     }
 
     @Override
@@ -66,8 +73,6 @@ public final class CommandManager implements CommandExecutor, TabExecutor {
         }
 
         sender.sendMessage(lang("reloading"));
-        plugin.cleanup();
-        Preferences.loadPreferences();
         plugin.reload();
 
         return true;
@@ -75,23 +80,34 @@ public final class CommandManager implements CommandExecutor, TabExecutor {
 
     private boolean setIcon(@NotNull Player player, @NotNull String icon) {
         ClanPlayer cp = plugin.getClanManager().getClanPlayer(player);
-        if (cp == null || cp.getClan() == null) {
+        if (cp == null) {
             player.sendMessage(lang("not-member"));
             return true;
         }
+
+        // Can't be null because of the check in clanManager#getClanPlayer
+        Clan clan = Objects.requireNonNull(cp.getClan());
+
         if (!player.hasPermission("simpleclans.map.seticon") || !cp.isLeader()) {
             player.sendMessage(lang("no-permission"));
             return true;
         }
 
-        if (plugin.getHomeLayer().getIconStorage().has(icon.toLowerCase())) {
+        if (homeLayer == null) {
+            player.sendMessage("layer-disabled");
+            return true;
+        }
+
+        if (homeLayer.getIconStorage().has(icon.toLowerCase())) {
             if (!player.hasPermission("simpleclans.map.icon.bypass") &&
                     !player.hasPermission("simpleclans.map.icon." + icon)) {
                 player.sendMessage(lang("no-permission"));
                 return true;
             }
-            Preferences pm = new Preferences(cp.getClan());
+
+            Preferences pm = new Preferences(clan);
             pm.setClanHomeIcon(icon);
+            homeLayer.upsertMarker(clan);
             player.sendMessage(lang("icon-changed"));
         } else {
             player.sendMessage(lang("icon-not-found"));
@@ -102,24 +118,36 @@ public final class CommandManager implements CommandExecutor, TabExecutor {
 
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
-        if (!command.getName().equalsIgnoreCase("seticon") || args.length != 0) {
+        if (!command.getName().equalsIgnoreCase("clanmap")) {
             return Collections.emptyList();
         }
 
-        if (!sender.hasPermission("simpleclans.map.list")) {
-            sender.sendMessage(lang("no-permission"));
-            return Collections.emptyList();
+        if (args.length == 1) {
+            return Arrays.asList("seticon", "help");
         }
 
-        List<String> icons = plugin.getHomeLayer().getIconStorage().getIcons().stream().
-                map(MarkerIcon::getMarkerIconLabel).
-                collect(Collectors.toList());
+        if (args[0].equalsIgnoreCase("seticon")) {
+            if (homeLayer == null) {
+                return Collections.emptyList();
+            }
 
-        if (icons.isEmpty()) {
-            sender.sendMessage(lang("error-no-icons"));
-            return Collections.emptyList();
+            if (!sender.hasPermission("simpleclans.map.list")) {
+                sender.sendMessage(lang("no-permission"));
+                return Collections.emptyList();
+            }
+
+            List<String> icons = homeLayer.getIconStorage().getIcons().stream().
+                    map(MarkerIcon::getMarkerIconLabel).
+                    collect(Collectors.toList());
+
+            if (icons.isEmpty()) {
+                sender.sendMessage(lang("error-no-icons"));
+                return Collections.emptyList();
+            }
+
+            return icons;
         }
 
-        return icons;
+        return Collections.emptyList();
     }
 }
